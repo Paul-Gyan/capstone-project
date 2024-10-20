@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate, login
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework.permissions import AllowAny
-
+from rest_framework.response import Response
 
 class RegisterViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
