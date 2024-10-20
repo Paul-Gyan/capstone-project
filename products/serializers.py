@@ -29,6 +29,8 @@ class ProductSerializer(serializers.ModelSerializer):
         return value
 
 class OrderSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(queryset=CustomUser.objects.all())
+    Product = serializers.PrimaryKeyRelatedField(queryset=Product.objects.all())
     class Meta:
         model = Order
         fields = '__all__'
