@@ -1,36 +1,40 @@
-from rest_framework import viewsets, permissions
+from rest_framework import generics, viewsets, status
 from .models import CustomUser
-from .serializers import CustomUserSerializer, RegisterSerializer
-from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from products.models import Order, Wishlist, Cart, CartItem
+from .serializers import CustomUserSerializer, LoginSerializer
+from django.contrib.auth import authenticate, login
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
+from rest_framework.permissions import AllowAny
 
-# Create your views here.
-class CustomUserViewSet(viewsets.ModelViewSet):
-    queryset = CustomUser.objects.all()
-    serializer_class = CustomUserSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return CustomUser.objects.filter(id=self.request.user.id)
-
-@api_view(['GET'])
-def user_dashboard(request):
-    user = request.user
-    recent_orders = Order.objects.filter(user=user)[:5]
-    wishlist_items = Wishlist.objects.filter(user=user)
-    user_info = CustomUserSerializer(user).data
-    cart = Cart.objects.filter(user=user).first()
-    cart_items = CartSerializer(cart).data if cart else None
-    data = {
-        'user_info': user_info,
-        'recent_orders': recent_orders,
-        'wishlist_items': wishlist_items,
-        'cart_items': cart_items
-    }
-    return Response(data)
 
 class RegisterViewSet(viewsets.ModelViewSet):
     queryset = CustomUser.objects.all()
-    serializer_class = RegisterSerializer
-    permission_classes = [permissions.AllowAny]
+    serializer_class = CustomUserSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({
+                "user": CustomUserSerializer(user, context=self.get_serializer_context()).data,
+                "message": "User Created Successfully.",
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LoginViewSet(viewsets.ModelViewSet):
+    queryset = CustomUser.objects.all()
+    serializer_class = LoginSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.validated_data
+            login(request, user)
+            return Response({
+                "user": CustomUserSerializer(user, context=self.get_serializer_context()).data,
+                "message": "User Logged In Successfully",
+            })
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
