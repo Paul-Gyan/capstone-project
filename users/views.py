@@ -1,4 +1,4 @@
-from rest_framework import generics, viewsets, status
+from rest_framework import generics, viewsets, status, views, permissions
 from .models import CustomUser
 from rest_framework.response import Response
 from .serializers import CustomUserSerializer, LoginSerializer
@@ -23,18 +23,17 @@ class RegisterViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class LoginViewSet(viewsets.ModelViewSet):
-    queryset = CustomUser.objects.all()
-    serializer_class = LoginSerializer
-    permission_classes = [AllowAny]
+class LoginView(views.APIView):
+    permission_classes = [permissions.AllowAny]
 
     def post(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+        serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.validated_data
             login(request, user)
+            user_data = CustomUserSerializer(user, context={'request': request}).data
             return Response({
-                "user": CustomUserSerializer(user, context=self.get_serializer_context()).data,
+                "user": user_data,
                 "message": "User Logged In Successfully",
-            })
+            }, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

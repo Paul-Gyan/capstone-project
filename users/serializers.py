@@ -1,12 +1,13 @@
 from rest_framework import serializers
 from .models import CustomUser
+from django.contrib.auth import authenticate
 
 
 
 class CustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'email', 'username', 'password']
+        fields = ['id', 'email', 'username']
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
 
@@ -25,10 +26,13 @@ class RegisterSerializer(serializers.ModelSerializer):
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
-    password = serializers.CharField()
+    password = serializers.CharField(write_only=True)
 
     def validate(self, data):
-        user = authenticate(Username=username, password=password)
+        username = data.get('username')
+        password = data.get('password')
+        user = authenticate(username=username, password=password)
+
         if user and user.is_active:
             return user
         raise serializers.ValidationError("Incorrect Credentials")
